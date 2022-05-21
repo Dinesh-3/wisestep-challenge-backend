@@ -9,20 +9,20 @@ import java.time.LocalDateTime;
 public class Auth {
     @Id
     private String id;
-
     private String userId;
-
     private String token;
-
-    private LocalDateTime expiryTime;
+    private LocalDateTime tokenExpiryTime;
+    private boolean isLoggedIn;
+    private LocalDateTime sessionExpiryTime;
+    private String sessionToken;
 
     public Auth() {
     }
 
-    public Auth(String userId, String token, LocalDateTime expiryTime) {
+    public Auth(String userId, String token, LocalDateTime tokenExpiryTime) {
         this.userId = userId;
         this.token = token;
-        this.expiryTime = expiryTime;
+        this.tokenExpiryTime = tokenExpiryTime;
     }
 
     public Auth(String userId) {
@@ -53,21 +53,35 @@ public class Auth {
         this.token = token;
     }
 
-    public LocalDateTime getExpiryTime() {
-        return expiryTime;
+    public LocalDateTime getTokenExpiryTime() {
+        return tokenExpiryTime;
     }
 
-    public void setExpiryTime(LocalDateTime expiryTime) {
-        this.expiryTime = expiryTime;
+    public void setTokenExpiryTime(LocalDateTime tokenExpiryTime) {
+        this.tokenExpiryTime = tokenExpiryTime;
     }
 
-    @Override
-    public String toString() {
-        return "{\"Auth\":{"
-                + "\"id\":\"" + id + "\""
-                + ", \"userId\":\"" + userId + "\""
-                + ", \"token\":\"" + token + "\""
-                + ", \"expiryTime\":" + expiryTime
-                + "}}";
+    public boolean isLoggedIn() {
+        return isLoggedIn;
+    }
+
+    public void setLoggedIn(boolean loggedIn) {
+        isLoggedIn = loggedIn;
+    }
+
+    public LocalDateTime getSessionExpiryTime() {
+        return sessionExpiryTime;
+    }
+
+    public void setSessionExpiryTime(LocalDateTime sessionExpiryTime) {
+        this.sessionExpiryTime = sessionExpiryTime;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public void setSessionToken(String sessionToken) {
+        this.sessionToken = sessionToken;
     }
 }

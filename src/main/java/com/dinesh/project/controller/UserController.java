@@ -29,14 +29,14 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    ResponseEntity<ResponseData> login(@RequestBody Login loginRequest){
-        ResponseData result = userService.login(loginRequest);
+    ResponseEntity<ResponseData> login(@RequestBody Login loginRequest, @RequestHeader Map<String, String> headers){
+        ResponseData result = userService.login(loginRequest, headers);
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{id}")
-    ResponseEntity<ResponseData> getUserById(@PathVariable("id") String userId){
-        ResponseData result = userService.getUserById(userId);
+    @GetMapping("/get")
+    ResponseEntity<ResponseData> getUserById(@RequestHeader Map<String, String> headers){
+        ResponseData result = userService.getUserById(headers);
         return ResponseEntity.ok(result);
     }
 

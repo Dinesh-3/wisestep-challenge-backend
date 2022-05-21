@@ -16,8 +16,10 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring5.SpringTemplateEngine;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -46,24 +48,57 @@ public class UserService {
         return ResponseData.ok();
     }
 
-    public ResponseData login(Login loginRequest) {
+    public ResponseData login(Login loginRequest, Map<String, String> headers) {
+        System.out.println("headers = " + headers);
 
         User user = repository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UserNotFoundException(String.format("User Not Found for %s ", loginRequest.getEmail())));
 
         Auth auth = authRepository.findByUserId(user.getId()).orElseThrow(() -> new ResourceNotFoundException("Token Not Sent"));
 
-        LocalDateTime expiryTime = auth.getExpiryTime();
+        handleExistingSession(auth);
+
+        LocalDateTime expiryTime = auth.getTokenExpiryTime();
         if(expiryTime.isBefore(LocalDateTime.now())) throw new ClientErrorException("Token expired try again");
 
         boolean isEqual = auth.getToken().equalsIgnoreCase(loginRequest.getOtp());
 
         if(!isEqual) throw new ClientErrorException("Invalid OTP");
 
-        return ResponseData.ok(user);
+        auth.setLoggedIn(true);
+        auth.setSessionExpiryTime(LocalDateTime.now().plusDays(1));
+        auth.setSessionToken(UUID.randomUUID().toString());
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("user", user);
+        map.put("session", auth.getSessionToken());
+
+        return ResponseData.ok(map);
     }
 
-    public ResponseData getUserById(String userId) {
-        User user = repository.findById(userId).orElseThrow(() -> new UserNotFoundException("User with id " + userId + " not Found"));
+    private void handleExistingSession(Auth auth) {
+
+        LocalDateTime sessionExpiryTime = auth.getSessionExpiryTime();
+        if(sessionExpiryTime == null) return;
+
+        boolean isBefore = sessionExpiryTime.isBefore(LocalDateTime.now());
+        if(isBefore) auth.setLoggedIn(false);
+
+        if(auth.isLoggedIn()) throw new ClientErrorException("User already logged in, Logout and try again");
+    }
+
+    public ResponseData getUserById(Map<String, String> headers) {
+        String token = headers.get("session-token");
+        if(token == null) throw new ClientErrorException("Token is required to get user info");
+
+        Auth auth = authRepository.findBySessionToken(token).orElseThrow(() -> new ClientErrorException("Invalid Token"));
+
+        if(!auth.isLoggedIn() || auth.getSessionExpiryTime().isBefore(LocalDateTime.now())){
+            auth.setLoggedIn(false);
+            authRepository.save(auth);
+            throw new ClientErrorException("Token Expired Login Again");
+        }
+
+        User user = repository.findById(auth.getUserId()).orElseThrow(() -> new UserNotFoundException("User with id " + auth.getUserId() + " not Found"));
         return ResponseData.ok(user);
     }
 
@@ -94,7 +129,7 @@ public class UserService {
 
         Auth auth = optionalAuth.orElse(new Auth(user.getId()));
         auth.setToken(otp);
-        auth.setExpiryTime(LocalDateTime.now().plusMinutes(3));
+        auth.setTokenExpiryTime(LocalDateTime.now().plusMinutes(3));
 
         authRepository.save(auth);
 
@@ -107,7 +142,7 @@ public class UserService {
     }
 
     private void validateExistingToken(Auth auth) {
-        LocalDateTime expiryTime = auth.getExpiryTime();
+        LocalDateTime expiryTime = auth.getTokenExpiryTime();
         boolean after = expiryTime.isAfter(LocalDateTime.now());
         if(after) throw new ClientErrorException("Token not expired. Please use existing token");
     }
