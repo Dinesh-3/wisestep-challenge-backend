@@ -2,7 +2,6 @@ package com.dinesh.project.dto;
 
 public class Email {
     private String from;
-
     private String senderName;
     private String to;
     private String subject;

@@ -31,9 +31,6 @@ public class NotificationService {
 
     public void sendEmail(Email email) {
         try {
-            System.out.println("email = " + email);
-            System.out.println("fromEmail = " + fromEmail);
-            System.out.println("username = " + username);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message);
             helper.setFrom(fromEmail);

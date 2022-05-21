@@ -39,6 +39,9 @@ public class UserService {
     }
 
     public ResponseData signup(User user) {
+        Optional<User> optionalUser = repository.findByEmail(user.getEmail());
+        if(optionalUser.isPresent()) throw new ClientErrorException("Email Already Exist!");
+
         repository.save(user);
         return ResponseData.ok();
     }
