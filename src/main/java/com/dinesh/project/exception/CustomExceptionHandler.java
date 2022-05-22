@@ -1,6 +1,9 @@
 package com.dinesh.project.exception;
 
+import com.dinesh.project.model.Log;
+import com.dinesh.project.repository.LogRepository;
 import com.dinesh.project.util.ResponseData;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,6 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @ControllerAdvice
 public class CustomExceptionHandler {
+    @Autowired
+    private LogRepository logRepository;
+
     //    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({MethodArgumentNotValidException.class, IllegalArgumentException.class})
     public ResponseEntity<ResponseData> handleValidationExceptions( Exception ex) {
@@ -45,6 +51,12 @@ public class CustomExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseData> handleException(Exception ex) {
         ex.printStackTrace();
+        try{
+            Log log = new Log(ex.getMessage(), ex.toString());
+            logRepository.save(log);
+        }catch (Exception exception){
+            //
+        }
         ResponseData responseBody = new ResponseData(false, ex.getMessage());
         return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
