@@ -34,6 +34,12 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/logout")
+    ResponseEntity<ResponseData> logout(@RequestHeader Map<String, String> headers){
+        ResponseData result = userService.logout(headers);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/get")
     ResponseEntity<ResponseData> getUserById(@RequestHeader Map<String, String> headers){
         ResponseData result = userService.getUserById(headers);

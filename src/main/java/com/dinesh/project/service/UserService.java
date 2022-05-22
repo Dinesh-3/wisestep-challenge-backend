@@ -11,6 +11,7 @@ import com.dinesh.project.repository.AuthRepository;
 import com.dinesh.project.repository.UserRepository;
 import com.dinesh.project.util.ResponseData;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring5.SpringTemplateEngine;
@@ -31,6 +32,9 @@ public class UserService {
 
     private final SpringTemplateEngine templateEngine;
     private final String subject = "One Time Password";
+
+    @Value("${otp.resend.interval}")
+    private int RESEND_INTERVAL_SEC;
 
     @Autowired
     public UserService(AuthRepository authRepository, UserRepository repository, NotificationService notificationService, SpringTemplateEngine templateEngine) {
@@ -58,9 +62,9 @@ public class UserService {
         handleExistingSession(auth);
 
         LocalDateTime expiryTime = auth.getTokenExpiryTime();
-        if(expiryTime.isBefore(LocalDateTime.now())) throw new ClientErrorException("Token expired try again");
+        if(expiryTime.isBefore(LocalDateTime.now())) throw new ClientErrorException("OTP Token expired try again");
 
-        boolean isEqual = auth.getToken().equalsIgnoreCase(loginRequest.getOtp());
+        boolean isEqual = auth.getOtpToken().equalsIgnoreCase(loginRequest.getOtp());
 
         if(!isEqual) throw new ClientErrorException("Invalid OTP");
 
@@ -68,11 +72,27 @@ public class UserService {
         auth.setSessionExpiryTime(LocalDateTime.now().plusDays(1));
         auth.setSessionToken(UUID.randomUUID().toString());
 
+        authRepository.save(auth);
+
         Map<String, Object> map = new HashMap<>();
         map.put("user", user);
         map.put("session", auth.getSessionToken());
 
         return ResponseData.ok(map);
+    }
+
+    public ResponseData logout(Map<String, String> headers) {
+        String token = headers.get("session-token");
+        if(token == null || token.isBlank()) throw new ClientErrorException("Token is required");
+
+        Auth auth = authRepository.findBySessionToken(token).orElseThrow(() -> new ClientErrorException("Invalid Token, token not found"));
+
+        auth.setLoggedIn(false);
+        auth.setSessionExpiryTime(LocalDateTime.now());
+
+        authRepository.save(auth);
+
+        return new ResponseData(true, "Logout Success");
     }
 
     private void handleExistingSession(Auth auth) {
@@ -128,8 +148,8 @@ public class UserService {
         notificationService.sendEmail(email);
 
         Auth auth = optionalAuth.orElse(new Auth(user.getId()));
-        auth.setToken(otp);
-        auth.setTokenExpiryTime(LocalDateTime.now().plusMinutes(3));
+        auth.setOtpToken(otp);
+        auth.setTokenExpiryTime(LocalDateTime.now().plusMinutes(RESEND_INTERVAL_SEC));
 
         authRepository.save(auth);
 
@@ -143,6 +163,7 @@ public class UserService {
 
     private void validateExistingToken(Auth auth) {
         LocalDateTime expiryTime = auth.getTokenExpiryTime();
+        if(expiryTime == null) return;
         boolean after = expiryTime.isAfter(LocalDateTime.now());
         if(after) throw new ClientErrorException("Token not expired. Please use existing token");
     }

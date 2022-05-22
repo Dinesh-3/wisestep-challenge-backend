@@ -10,7 +10,7 @@ public class Auth {
     @Id
     private String id;
     private String userId;
-    private String token;
+    private String otpToken;
     private LocalDateTime tokenExpiryTime;
     private boolean isLoggedIn;
     private LocalDateTime sessionExpiryTime;
@@ -19,9 +19,9 @@ public class Auth {
     public Auth() {
     }
 
-    public Auth(String userId, String token, LocalDateTime tokenExpiryTime) {
+    public Auth(String userId, String otpToken, LocalDateTime tokenExpiryTime) {
         this.userId = userId;
-        this.token = token;
+        this.otpToken = otpToken;
         this.tokenExpiryTime = tokenExpiryTime;
     }
 
@@ -45,12 +45,12 @@ public class Auth {
         this.userId = userId;
     }
 
-    public String getToken() {
-        return token;
+    public String getOtpToken() {
+        return otpToken;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public void setOtpToken(String otpToken) {
+        this.otpToken = otpToken;
     }
 
     public LocalDateTime getTokenExpiryTime() {
