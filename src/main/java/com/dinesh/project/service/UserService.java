@@ -83,7 +83,7 @@ public class UserService {
 
     public ResponseData logout(Map<String, String> headers) {
         String token = headers.get("session-token");
-        if(token == null || token.isBlank()) throw new ClientErrorException("Token is required");
+        if(token == null || token.isEmpty()) throw new ClientErrorException("Token is required");
 
         Auth auth = authRepository.findBySessionToken(token).orElseThrow(() -> new ClientErrorException("Invalid Token, token not found"));
 
@@ -127,7 +127,7 @@ public class UserService {
         System.out.println("request = " + request);
         String userEmail = request.get("email");
 
-        if(userEmail == null || userEmail.isBlank()) throw new ClientErrorException("Email is required");
+        if(userEmail == null || userEmail.isEmpty()) throw new ClientErrorException("Email is required");
 
         userEmail = userEmail.trim();
 
